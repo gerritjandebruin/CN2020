@@ -1,0 +1,8 @@
+- [ ] update Experiment A2 to format of A1
+- [ ] update Experiment B to format of A1
+- [ ] finish feature construction B
+- [ ] finish model construction A1
+  - [ ] prevent overfitting
+  - [ ] random predictions
+- [ ] finish model construction A2
+- [ ] finish model construction B
