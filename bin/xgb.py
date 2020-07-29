@@ -20,11 +20,11 @@ random_state = 1
 
 n_jobs_outer_cv = 1
 n_jobs_inner_cv = 5
-n_jobs_xgboost = 25
+n_jobs_xgboost = 50
 
 n_splits_outer = 5
 n_splits_inner = 5
-max_depths = [1]
+max_depths = [1, 2]
 tree_methods = ['hist']
 scalers = [
   StandardScaler(), 
