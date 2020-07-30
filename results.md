@@ -16,3 +16,4 @@
 # Hyperparameter optimalization
 - max_depth = 1 is better than higher values (equal val score, lower train score)
 - tree_method 'hist' give similiar results as 'exact' and 'approx' but is faster
+- scaling does not improve accuracy

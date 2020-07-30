@@ -18,24 +18,25 @@ from xgboost import XGBClassifier
 
 random_state = 1
 
-n_jobs_outer_cv = 1
+n_jobs_outer_cv = 5
 n_jobs_inner_cv = 5
-n_jobs_xgboost = 50
+n_jobs_xgboost = 8
 
 n_splits_outer = 5
 n_splits_inner = 5
-max_depths = [1, 2]
+max_depths = [1]
 tree_methods = ['hist']
-scalers = [
-  StandardScaler(), 
-  MinMaxScaler(), 
-  RobustScaler(), 
-  PowerTransformer(method='yeo-johnson'), 
-  PowerTransformer(method='box-cox'), 
-  QuantileTransformer(output_distribution='uniform', random_state=random_state),
-  QuantileTransformer(output_distribution='normal', random_state=random_state)
-]
-filename = f'xgb_hist_maxdepth12_scalers'
+# scalers = [
+#   StandardScaler(), 
+#   MinMaxScaler(), 
+#   RobustScaler(), 
+#   PowerTransformer(method='yeo-johnson'), 
+#   QuantileTransformer(output_distribution='uniform', random_state=random_state),
+#   QuantileTransformer(output_distribution='normal', random_state=random_state)
+# ]
+filename = f'xgb_hist_maxdepth1'
+
+verbose = 2
 
 def print_status(desc: str): print(f'{time.strftime("%H:%M:%S", time.localtime())}: {desc}')
   
@@ -51,7 +52,7 @@ def nested_cross_validation(X, y, param_grid, params):
   inner_cv = StratifiedKFold(n_splits_inner, shuffle=True, random_state=random_state)
   
   pipe = Pipeline([
-    ('scaler', StandardScaler()),
+#     ('scaler', StandardScaler()),
     ('classifier', XGBClassifier(**params))
   ])
   
@@ -62,7 +63,7 @@ def nested_cross_validation(X, y, param_grid, params):
     n_jobs=n_jobs_inner_cv,
     cv=inner_cv,
     refit=True,
-    verbose=0,
+    verbose=verbose,
     return_train_score=True
    )
   
@@ -71,7 +72,7 @@ def nested_cross_validation(X, y, param_grid, params):
     scoring='average_precision', 
     cv=outer_cv, 
     n_jobs=n_jobs_outer_cv, 
-    verbose=10, 
+    verbose=verbose, 
     return_train_score=True, 
     return_estimator=True
   )
@@ -93,7 +94,8 @@ def main(filepath, nested_cv, random):
   scale_pos_weight=sum(~y)/sum(y)
   print_status(f'scale_pos_weight: {scale_pos_weight}')
   
-  param_grid = dict(classifier__max_depth=max_depths, classifier__tree_method=tree_methods, scaler=scalers)
+#   param_grid = dict(classifier__max_depth=max_depths, classifier__tree_method=tree_methods, scaler=scalers)
+  param_grid = dict(classifier__max_depth=max_depths, classifier__tree_method=tree_methods)
   params = dict(scale_pos_weight=scale_pos_weight, random_state=random_state, n_jobs=n_jobs_xgboost)
   
   # Run
@@ -115,5 +117,5 @@ if __name__ == "__main__":
   print_status(f'Result will be stored at {args.filepath}{filename}.pkl')
   print_status(f'{max_depths=}')
   print_status(f'{tree_methods=}')
-  print_status(f'{scalers=}')
+#   print_status(f'{scalers=}')
   main(filepath=args.filepath, nested_cv=args.nested_cv, random=args.random)

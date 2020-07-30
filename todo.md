@@ -1,4 +1,4 @@
-- [ ] fit scalers
 - [ ] feature construction A3
 - [ ] year -> epoch
 - [ ] logistic regression, RF, KNN
+- [ ] more data
