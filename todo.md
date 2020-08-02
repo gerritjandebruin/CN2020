@@ -1,4 +1,7 @@
+- [ ] feature construction A1
+- [ ] feature construction A2
 - [ ] feature construction A3
-- [ ] year -> epoch
-- [ ] logistic regression, RF, KNN
+- [ ] feature construction B1
+- [x] year -> epoch
 - [ ] more data
+- [ ] logistic regression, RF, KNN
