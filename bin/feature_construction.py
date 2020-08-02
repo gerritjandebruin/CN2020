@@ -14,7 +14,8 @@ from tqdm import tqdm
 def flatten(l): return [item for sublist in l for item in sublist]
 def get_maxflow(graph, nodepairs, residual): return [nx.maximum_flow_value(graph, *nodepair, capacity='weight', flow_func=nx.algorithms.flow.preflow_push, residual=residual) for nodepair in nodepairs]
 def get_shortest_paths(graph, nodepairs): return [len(list(nx.all_shortest_paths(graph, *nodepair))) for nodepair in nodepairs]
-def get_katz(graph, nodepairs, beta=.005, cutoff=5): return [sum([beta**k * v for k, v in collections.Counter([len(p) for p in nx.all_simple_paths(graph, *nodepair, cutoff=5)]).items()]) for nodepair in nodepairs]
+def get_katz(graph, nodepairs, beta=.005, cutoff=5): 
+  return [sum([beta**k * v for k, v in collections.Counter([len(p) for p in nx.all_simple_paths(graph, *nodepair, cutoff=5)]).items()]) for nodepair in nodepairs]
 def get_propflow(graph, limit=5):
     score = dict()
     for node in tqdm(graph):
