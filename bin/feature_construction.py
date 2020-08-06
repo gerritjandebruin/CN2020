@@ -14,7 +14,6 @@ from tqdm import tqdm
 def flatten(l): return [item for sublist in l for item in sublist]
 def get_mf(graph, nodepairs, residual, flow_func, **kwargs): 
   return [nx.maximum_flow_value(graph, *nodepair, capacity='weight', flow_func=flow_func, residual=residual, **kwargs) for nodepair in nodepairs]
-def get_sp(graph, nodepairs): return [len(list(nx.all_shortest_paths(graph, *nodepair))) for nodepair in nodepairs]
 def get_katz(graph, nodepairs, beta=.005, cutoff=5): 
   return [sum([beta**k * v for k, v in collections.Counter([len(p) for p in nx.all_simple_paths(graph, *nodepair, cutoff=5)]).items()]) for nodepair in nodepairs]
 def get_propflow(graph, limit=5):
@@ -82,39 +81,39 @@ if __name__ == "__main__":
   
   # Single-core calculations:
   ## Degree
-  degree_min, degree_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair)]) for nodepair in tqdm(nodepairs, desc="Degree")])
-  features['d_min'] = degree_min
-  features['d_max'] = degree_max
+#   degree_min, degree_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair)]) for nodepair in tqdm(nodepairs, desc="Degree")])
+#   features['d_min'] = degree_min
+#   features['d_max'] = degree_max
   
-  ## Volume
-  volume_min, volume_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair, weight='weight')]) for nodepair in tqdm(nodepairs, desc="Volume")])
-  features['v_min'] = volume_min
-  features['v_max'] = volume_max
+#   ## Volume
+#   volume_min, volume_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair, weight='weight')]) for nodepair in tqdm(nodepairs, desc="Volume")])
+#   features['v_min'] = volume_min
+#   features['v_max'] = volume_max
   
-  ## Common Neighbors
-  features['cn'] = [len(list(nx.common_neighbors(graph, *nodepair))) for nodepair in tqdm(nodepairs, desc='Common Neighbors')]
+#   ## Common Neighbors
+#   features['cn'] = [len(list(nx.common_neighbors(graph, *nodepair))) for nodepair in tqdm(nodepairs, desc='Common Neighbors')]
   
-  ## Adamic Adar
-  if not args.hplp: features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
+#   ## Adamic Adar
+#   if not args.hplp: features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
   
-  ## Jaccard Coefficient
-  if not args.hplp: features['jc'] = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='Jaccard Coefficient'))]
+#   ## Jaccard Coefficient
+#   if not args.hplp: features['jc'] = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='Jaccard Coefficient'))]
   
-  ## Preferential Attachment
-  if not args.hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
+#   ## Preferential Attachment
+#   if not args.hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
 
-  ## Propflow
-  print_status("Calculate propflow.")
-  score = get_propflow(graph)
-  features['pf'] = np.fromiter(((score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in tqdm(nodepairs, desc='propflow')), dtype=float)
+#   ## Propflow
+#   print_status("Calculate propflow.")
+#   score = get_propflow(graph)
+#   features['pf'] = np.fromiter(((score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in tqdm(nodepairs, desc='propflow')), dtype=float)
   
-  # Store
-  print_status('Start storing single-core features')
-  pd.DataFrame(features).to_pickle(args.directory + 'singlecore.pkl')
+#   # Store
+#   print_status('Start storing single-core features')
+#   pd.DataFrame(features).to_pickle(args.directory + 'singlecore.pkl')
   
-  # Multi-core calculations:
-  no_chunks = len(nodepairs) // chunk_size
-  nodepair_chuncks = np.array_split(nodepairs, no_chunks)
+#   # Multi-core calculations:
+#   no_chunks = len(nodepairs) // chunk_size
+#   nodepair_chuncks = np.array_split(nodepairs, no_chunks)
   
   ## Maxflow
   if not args.skip_maxflow:
@@ -124,32 +123,33 @@ if __name__ == "__main__":
     kwargs = {'flow_func': nx.algorithms.flow.edmonds_karp, 'cutoff': 5} if args.edmonds_karp else {'flow_func': nx.algorithms.flow.preflow_push}
     
     mf = np.array(
-      flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
+      flatten(ProgressParallel(n_jobs=128, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
     )
     print_status("Store maxflow.")
     mf = np.array(mf)
     mf.dump(args.directory + 'maxflow.pkl')
-    features['mf'] = mf
-  
-  ## Shortest Paths
-  print_status('Warning: l=5 not implemented for shortest paths.')
-  sp = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Shortest Paths (parallel)')(joblib.delayed(get_sp)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
-  print_status("Store shortest paths.")
-  sp.dump(args.directory + 'shortest_paths.pkl')
-  features['sp'] = sp
+#     features['mf'] = mf
   
   ## Katz
-  if not args.hplp:
-    katz = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
-    print_status("Store Katz.")
-    katz.dump(args.directory + 'katz.pkl')
-
-  print_status('Load target')
-  features['target'] = np.load(args.directory + 'targets.pkl')
+#   if not args.hplp:
+#     katz = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
+#     print_status("Store Katz.")
+#     katz.dump(args.directory + 'katz.pkl')
+    
+  ## Shortest Paths
+  sp_dict = {node: {k: len(v) for k, v in nx.predecessor(graph, node, cutoff=5).items()} for node in tqdm(graph, desc='calculating shortest paths')}
   
-  print_status("Store features.") 
-  features = pd.DataFrame(features)
-  features.mf_flow_func = 'edmonds_karp' if args.edmonds_karp else 'preflow_push'
-  features.to_pickle(args.directory + 'features.pkl')
+  print_status("Store shortest paths.")
+  sp = np.fromiter((sp_dict[u][v] for u, v in tqdm(nodepairs, desc='Retrieve sp')), dtype=int)
+  sp.dump(args.directory + 'shortest_paths.pkl')
+#   features['sp'] = sp
+
+#   print_status('Load target')
+#   features['target'] = joblib.load(args.directory + 'targets.pkl')
+  
+#   print_status("Store features.") 
+#   features = pd.DataFrame(features)
+#   features.mf_flow_func = 'edmonds_karp' if args.edmonds_karp else 'preflow_push'
+#   features.to_pickle(args.directory + 'features.pkl')
 
   

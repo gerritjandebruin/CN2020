@@ -63,6 +63,8 @@ if __name__ == "__main__":
   
   grid_params = _convert_grid_params(grid_params, y)
   
+  result = dict()
+  
   # Trainval and test split
   X_trainval, X_test, y_trainval, y_test = train_test_split(X, y, **split_params)
   
