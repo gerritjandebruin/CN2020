@@ -12,8 +12,9 @@ import pandas as pd
 from tqdm import tqdm
 
 def flatten(l): return [item for sublist in l for item in sublist]
-def get_maxflow(graph, nodepairs, residual): return [nx.maximum_flow_value(graph, *nodepair, capacity='weight', flow_func=nx.algorithms.flow.preflow_push, residual=residual) for nodepair in nodepairs]
-def get_shortest_paths(graph, nodepairs): return [len(list(nx.all_shortest_paths(graph, *nodepair))) for nodepair in nodepairs]
+def get_mf(graph, nodepairs, residual, flow_func, **kwargs): 
+  return [nx.maximum_flow_value(graph, *nodepair, capacity='weight', flow_func=flow_func, residual=residual, **kwargs) for nodepair in nodepairs]
+def get_sp(graph, nodepairs): return [len(list(nx.all_shortest_paths(graph, *nodepair))) for nodepair in nodepairs]
 def get_katz(graph, nodepairs, beta=.005, cutoff=5): 
   return [sum([beta**k * v for k, v in collections.Counter([len(p) for p in nx.all_simple_paths(graph, *nodepair, cutoff=5)]).items()]) for nodepair in nodepairs]
 def get_propflow(graph, limit=5):
@@ -63,6 +64,9 @@ if __name__ == "__main__":
   # Get parameters
   parser = argparse.ArgumentParser()
   parser.add_argument('directory', help='Location where distances.pkl, graph.pkl, nodepairs.pkl and targets.pkl are present. Result is stored as features.pkl in this directory.')
+  parser.add_argument('--hplp', help='Only evaluate HPLP features.', action='store_true')
+  parser.add_argument('--skip_maxflow', help='Skip maxflow feature.', action='store_true')
+  parser.add_argument('--edmonds_karp', help='Use Edmonds_karp algorithm instead of preflow push.', action='store_true')
   args = parser.parse_args()
   
   # Read graph and nodepairs
@@ -72,88 +76,80 @@ if __name__ == "__main__":
   print_status('Load nodepairs')
   nodepairs = joblib.load(args.directory + 'nodepairs.pkl')
 
-  print_status('Load target')
-  target = joblib.load(args.directory + 'targets.pkl')
-
-
   print_status('Start collecting features')
+  
+  features = dict()
   
   # Single-core calculations:
   ## Degree
-  degree_min, degree_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair)]) for nodepair in tqdm(nodepairs, desc="degree")])
+  degree_min, degree_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair)]) for nodepair in tqdm(nodepairs, desc="Degree")])
+  features['d_min'] = degree_min
+  features['d_max'] = degree_max
   
   ## Volume
-  volume_min, volume_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair, weight='weight')]) for nodepair in tqdm(nodepairs, desc="volume")])
+  volume_min, volume_max = zip(*[sorted([degree for _, degree in graph.degree(nodepair, weight='weight')]) for nodepair in tqdm(nodepairs, desc="Volume")])
+  features['v_min'] = volume_min
+  features['v_max'] = volume_max
   
-  ## Common nbrs
-  common_nbrs = [len(list(nx.common_neighbors(graph, *nodepair))) for nodepair in tqdm(nodepairs, desc='Common nbrs')]
+  ## Common Neighbors
+  features['cn'] = [len(list(nx.common_neighbors(graph, *nodepair))) for nodepair in tqdm(nodepairs, desc='Common Neighbors')]
   
   ## Adamic Adar
-  adamic_adar = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
+  if not args.hplp: features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
   
-  ## Jaccard
-  jaccard = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='jaccard'))]
+  ## Jaccard Coefficient
+  if not args.hplp: features['jc'] = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='Jaccard Coefficient'))]
   
   ## Preferential Attachment
-  preferential_attachment = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='preferential attachment'))]
-  
-  # Store
-  print_status('Start storing features')
-  pd.DataFrame(
-    dict(
-      degree_min=degree_min, degree_max=degree_max, volume_min=volume_min, volume_max=volume_max,common_nbrs=common_nbrs,adamic_adar=adamic_adar,jaccard=jaccard, 
-      preferential_attachment=preferential_attachment
-    )
-  ).to_pickle(args.directory + 'singlecore.pkl')
+  if not args.hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
 
   ## Propflow
   print_status("Calculate propflow.")
   score = get_propflow(graph)
-  propflow = [(score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in tqdm(nodepairs, desc='propflow')]
-  joblib.dump(propflow, args.directory + 'propflow.pkl') 
+  features['pf'] = np.fromiter(((score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in tqdm(nodepairs, desc='propflow')), dtype=float)
+  
+  # Store
+  print_status('Start storing single-core features')
+  pd.DataFrame(features).to_pickle(args.directory + 'singlecore.pkl')
   
   # Multi-core calculations:
   no_chunks = len(nodepairs) // chunk_size
   nodepair_chuncks = np.array_split(nodepairs, no_chunks)
   
   ## Maxflow
-  print_status("Build residual network.")
-  residual = nx.algorithms.flow.utils.build_residual_network(graph, 'weight')
-  
-  maxflow = flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_maxflow)(graph, nodepair_chunck, residual) for nodepair_chunck in nodepair_chuncks))
-  print_status("Store maxflow.")
-  joblib.dump(maxflow, args.directory + 'maxflow.pkl')
+  if not args.skip_maxflow:
+    print_status(f"Build residual network for {'edmonds_karp' if args.edmonds_karp else 'preflow_push'}.")
+    residual = nx.algorithms.flow.utils.build_residual_network(graph, 'weight')
+      
+    kwargs = {'flow_func': nx.algorithms.flow.edmonds_karp, 'cutoff': 5} if args.edmonds_karp else {'flow_func': nx.algorithms.flow.preflow_push}
+    
+    mf = np.array(
+      flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
+    )
+    print_status("Store maxflow.")
+    mf = np.array(mf)
+    mf.dump(args.directory + 'maxflow.pkl')
+    features['mf'] = mf
   
   ## Shortest Paths
-  shortest_paths = flatten(
-    ProgressParallel(n_jobs=-1, total=no_chunks, desc='Shortest Paths (parallel)')(joblib.delayed(get_shortest_paths)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)
-  )
+  print_status('Warning: l=5 not implemented for shortest paths.')
+  sp = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Shortest Paths (parallel)')(joblib.delayed(get_sp)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
   print_status("Store shortest paths.")
-  joblib.dump(shortest_paths, args.directory + 'shortest_paths.pkl')
+  sp.dump(args.directory + 'shortest_paths.pkl')
+  features['sp'] = sp
   
   ## Katz
-  katz = flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks))
-  print_status("Store Katz.")
-  joblib.dump(katz, args.directory + 'katz.pkl')
-  
-  print_status("Construct dataframe")  
-  features = dict(
-    degree_min=degree_min, 
-    degree_max=degree_max, 
-    volume_min=volume_min, 
-    volume_max=volume_max,
-    common_nbrs=common_nbrs,
-    adamic_adar=adamic_adar,
-    jaccard=jaccard,
-    preferential_attachment=preferential_attachment,
-    maxflow=maxflow,
-    shortest_paths=shortest_paths,
-    propflow=propflow,
-    katz=katz, 
-    target=target
-  )
+  if not args.hplp:
+    katz = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
+    print_status("Store Katz.")
+    katz.dump(args.directory + 'katz.pkl')
 
+  print_status('Load target')
+  features['target'] = np.load(args.directory + 'targets.pkl')
+  
   print_status("Store features.") 
-  pd.DataFrame(features).to_pickle(args.directory + 'features.pkl')
+  features = pd.DataFrame(features)
+  features.mf_flow_func = 'edmonds_karp' if args.edmonds_karp else 'preflow_push'
+  features.to_pickle(args.directory + 'features.pkl')
 
   

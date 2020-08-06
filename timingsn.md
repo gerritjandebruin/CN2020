@@ -7,11 +7,18 @@ Instances: 41M
 |:--------------:|:----------:|:-----             
 | Degree         |            | 4m   
 | Volume         |            | 6m    
-| Common nbrs    |            |      
-| Adamic Adar    |            |      
-| Jaccard        |            |      
-| Pref. Attach.  |            |      
-| Propflow       |            |       
-| Maxflow        | ✓         |        
-| Shortest Paths | ✓         |        
-| Katz           | ✓         |                
+| Common nbrs    |            | 8m    
+| Adamic Adar    |            | 19m   
+| Jaccard        |            | 11m  
+| Pref. Attach.  |            | 2m  
+| Propflow       |            | 2m    
+| Maxflow        | ✓         | 28h    
+| Shortest Paths | ✓         | 3h    
+| Katz           | ✓         | 4h       
+
+Experiment A2
+Started: 2-8-2020 13:00
+| Feature        | Multi-core | Time            
+|:--------------:|:----------:|:-----                 
+| Shortest Paths | ✓         | 3h    
+| Katz           | ✓         | 5h 
