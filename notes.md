@@ -19,9 +19,8 @@
 | PA      |             |      | y     |
 
 # Timing
-Feature construction A1/4:
-- pf: 13m
-- mf: ~105m
+## Feature construction A1/all:
+- mf: ~3days
 
 # Experiments
 - A1: Like Lichtenwalter (RandomSplit)
