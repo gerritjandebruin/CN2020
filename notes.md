@@ -27,14 +27,15 @@
 - B1: Like Lichtenwalter (TemporalSplit)
 
 # Parameter tuning
-eval_metric doesn't matter
-balanced only necessary for n>2
-n_estimator default is okay
-max_depth=1
+- eval_metric doesn't matter
+- balanced only necessary for n>2
+- n_estimator default is okay
+- max_depth=1
+| Experiment | Param |
 
 # Current
-- b1 init @ viridium
-- a1/total running @ mithril
+- b1/4 feature construction @ viridium
+- a1/total running @ mithril (crashed)
 
 # To do
 - feedback verwerken

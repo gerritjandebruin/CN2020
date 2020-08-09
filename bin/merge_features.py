@@ -24,10 +24,7 @@ if __name__ == "__main__":
   features['target'] = joblib.load(args.directory + 'targets.pkl')
 
   print_status('Load maxflow features')
-  features['maxflow'] = joblib.load(args.directory + 'maxflow.pkl')
-
-  print_status('Load shortest paths')
-  features['shortest_paths'] = joblib.load(args.directory + 'shortest_paths.pkl')
+  features['mf'] = joblib.load(args.directory + 'maxflow.pkl')
 
   print_status("Store features.") 
   pd.DataFrame(features).to_pickle(args.directory + 'features.pkl')
