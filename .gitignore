@@ -2,3 +2,8 @@
 __pycache__
 .ipynb_checkpoints
 temp
+src/*.pkl
+src/*.zip*
+src/*.enron
+src/artexhibit
+src/*.txt

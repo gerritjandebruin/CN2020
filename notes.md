@@ -31,7 +31,6 @@
 - balanced only necessary for n>2
 - n_estimator default is okay
 - max_depth=1
-| Experiment | Param |
 
 # Current
 - b1/4 feature construction @ viridium
