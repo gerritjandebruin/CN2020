@@ -1,0 +1,85 @@
+BibSonomy user–publication network, part of the Koblenz Network Collection
+===========================================================================
+
+This directory contains the TSV and related files of the bibsonomy-2ui network: This is the bipartite user–publication network from BibSonomy. Each edge represents a tag assignment.  The network allows multiple edge, i.e., a user may give multiple tags to a single publication.  The network is complete as it is taken from the official BibSonomy dump.
+
+
+More information about the network is provided here: 
+http://konect.cc/networks/bibsonomy-2ui
+
+Files: 
+    meta.bibsonomy-2ui -- Metadata about the network 
+    out.bibsonomy-2ui -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
+      The meaning of the columns in out.bibsonomy-2ui are: 
+        First column: ID of from node 
+        Second column: ID of to node
+        Third column (if present): weight or multiplicity of edge
+        Fourth column (if present):  timestamp of edges Unix time
+        Third column: edge weight
+        Fourth column: timestamp of the edge
+    ent.bibsonomy-2ui.item.name -- Contains the attribute `name` of entity `item` of the network
+
+
+Use the following References for citation:
+
+@MISC{konect:2017:bibsonomy-2ui,
+    title = {BibSonomy user–publication network dataset -- {KONECT}},
+    month = oct,
+    year = {2017},
+    url = {http://konect.cc/networks/bibsonomy-2ui}
+}
+
+@article{konect:bibsonomy,
+	title = {The Social Bookmark and Publication Management System
+                  {BibSonomy}},
+	author = {Dominik Benz and Andreas Hotho and Robert Jäschke and
+                  Beate Krause and Folke Mitzlaff and Christoph Schmitz
+                  and Gerd Stumme},
+	journal = {The VLDB J.},
+	year = {2010},
+	month = {dec},
+	volume = {19},
+	number = {6},
+	pages = {849--875},
+}
+
+@article{konect:bibsonomy,
+	title = {The Social Bookmark and Publication Management System
+                  {BibSonomy}},
+	author = {Dominik Benz and Andreas Hotho and Robert Jäschke and
+                  Beate Krause and Folke Mitzlaff and Christoph Schmitz
+                  and Gerd Stumme},
+	journal = {The VLDB J.},
+	year = {2010},
+	month = {dec},
+	volume = {19},
+	number = {6},
+	pages = {849--875},
+}
+
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+

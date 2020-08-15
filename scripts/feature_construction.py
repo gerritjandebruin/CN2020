@@ -4,6 +4,7 @@ import argparse
 import collections
 import math
 from time import localtime, strftime
+import typing
 
 import joblib
 import networkx as nx
@@ -57,26 +58,8 @@ class ProgressParallel(joblib.Parallel):
         self._pbar.n = self.n_completed_tasks
         self._pbar.refresh()
 
-if __name__ == "__main__":
-  chunk_size = 1000
-
-  # Get parameters
-  parser = argparse.ArgumentParser()
-  parser.add_argument('directory', help='Location where distances.pkl, graph.pkl, nodepairs.pkl and targets.pkl are present. Result is stored as features.pkl in this directory.')
-  parser.add_argument('--hplp', help='Only evaluate HPLP features.', action='store_true')
-  parser.add_argument('--skipmaxflow', help='Skip maxflow feature.', action='store_true')
-  parser.add_argument('--preflow', help='Use preflow push algorithm instead of Edmonds_karp.', action='store_true')
-  args = parser.parse_args()
-  
-  # Read graph and nodepairs
-  print_status('Load graph')
-  graph = joblib.load(args.directory + 'graph.pkl')
-
-  print_status('Load nodepairs')
-  nodepairs = joblib.load(args.directory + 'nodepairs.pkl')
-
-  print_status('Start collecting features')
-  
+        
+def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[int, int]], target: typing.List[bool], hplp=True, chunksize=1000) -> pd.DataFrame:
   features = dict()
   
   # Single-core calculations:
@@ -108,52 +91,65 @@ if __name__ == "__main__":
   features['sp'] = sp
   
   ## Adamic Adar
-  if not args.hplp: features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
+  if not hplp: features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
   
   ## Jaccard Coefficient
-  if not args.hplp: features['jc'] = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='Jaccard Coefficient'))]
+  if not hplp: features['jc'] = [p for _, _, p in nx.jaccard_coefficient(graph, tqdm(nodepairs, desc='Jaccard Coefficient'))]
   
   ## Preferential Attachment
-  if not args.hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
-  
-  # Store
-  print_status('Start storing single-core features')
-  pd.DataFrame(features).to_pickle(args.directory + 'singlecore.pkl')
+  if not hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
   
   # Multi-core calculations:
   no_chunks = len(nodepairs) // chunk_size
   nodepair_chuncks = np.array_split(nodepairs, no_chunks)
   
   ## Maxflow
-  if not args.skipmaxflow:
-    print_status(f"Build residual network for {'preflow_push' if args.preflow else 'edmonds_karp'}.")
-    residual = nx.algorithms.flow.utils.build_residual_network(graph, 'weight')
-      
-    kwargs = {'flow_func': nx.algorithms.flow.preflow_push} if args.preflow else {'flow_func': nx.algorithms.flow.edmonds_karp, 'cutoff': 5}
-    
-    mf = np.array(
-      flatten(ProgressParallel(n_jobs=128, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
-    )
-    print_status("Store maxflow.")
-    mf = np.array(mf)
-    mf.dump(args.directory + 'maxflow.pkl')
-    features['mf'] = mf
+  residual = nx.algorithms.flow.utils.build_residual_network(graph, 'weight')
+
+  kwargs = {'flow_func': nx.algorithms.flow.preflow_push} if args.preflow else {'flow_func': nx.algorithms.flow.edmonds_karp, 'cutoff': 5}
+
+  mf = np.array(
+    flatten(ProgressParallel(n_jobs=128, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
+  )
+  print_status("Store maxflow.")
+  mf = np.array(mf)
+  mf.dump(args.directory + 'maxflow.pkl')
+  features['mf'] = mf
   
   # Katz
-  if not args.hplp:
+  if not hplp:
     katz = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
     print_status("Store Katz.")
     katz.dump(args.directory + 'katz.pkl')
     features['katz'] = katz
     
   # Target
-  print_status('Load target')
-  features['target'] = joblib.load(args.directory + 'targets.pkl')
+  features['target'] = target
+  
+  return pd.DataFrame(features)
+if __name__ == "__main__":
+
+  # Get parameters
+  parser = argparse.ArgumentParser()
+  parser.add_argument('directory', help='Location where distances.pkl, graph.pkl, nodepairs.pkl and targets.pkl are present. Result is stored as features.pkl in this directory.')
+  parser.add_argument('--hplp', help='Only evaluate HPLP features.', action='store_true')
+  parser.add_argument('--skipmaxflow', help='Skip maxflow feature.', action='store_true')
+  parser.add_argument('--preflow', help='Use preflow push algorithm instead of Edmonds_karp.', action='store_true')
+  args = parser.parse_args()
+
+  print_status('Load nodepairs')
+  nodepairs = joblib.load(args.directory + 'nodepairs.pkl')
+
+  print_status('Start collecting features')
+  features = feature_construction(
+    graph = joblib.load(args.directory + 'graph.pkl'),
+    nodepairs = joblib.load(args.directory + 'nodepairs.pkl'),
+    target = joblib.load(args.directory + 'target.pkl'),
+    hplp=args.hplp
+  )
   
   # Store
   print_status("Store features.") 
-  features = pd.DataFrame(features)
-  features.mf_flow_func = 'preflow_push' if args.preflow else 'edmonds_karp'
   features.to_pickle(args.directory + 'features.pkl')
 
   

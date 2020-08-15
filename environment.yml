@@ -3,15 +3,18 @@ channels:
   - conda-forge
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
-  - _openmp_mutex=4.5=0_gnu
+  - _openmp_mutex=4.5=1_gnu
   - _py-xgboost-mutex=2.0=cpu_0
+  - argon2-cffi=20.1.0=py38h1e0a361_1
   - attrs=19.3.0=py_0
   - backcall=0.2.0=pyh9f0ad1d_0
+  - backports=1.0=py_2
+  - backports.functools_lru_cache=1.6.1=py_0
   - bleach=3.1.5=pyh9f0ad1d_0
   - brotlipy=0.7.0=py38h1e0a361_1000
   - ca-certificates=2020.6.20=hecda079_0
   - certifi=2020.6.20=py38h32f6830_0
-  - cffi=1.14.0=py38hd463f26_0
+  - cffi=1.14.1=py38h5bae8af_0
   - chardet=3.0.4=py38h32f6830_1006
   - colorama=0.4.3=py_0
   - cryptography=3.0=py38h766eaa4_0
@@ -20,14 +23,15 @@ dependencies:
   - defusedxml=0.6.0=py_0
   - entrypoints=0.3=py38h32f6830_1001
   - freetype=2.10.2=he06d7ca_0
+  - git-lfs=2.11.0=0
   - gitdb=4.0.5=py_0
-  - gitpython=3.1.3=py_0
+  - gitpython=3.1.7=py_0
   - icu=67.1=he1b5a44_0
   - idna=2.10=pyh9f0ad1d_0
   - importlib-metadata=1.7.0=py38h32f6830_0
   - importlib_metadata=1.7.0=0
   - ipykernel=5.3.4=py38h23f93f0_0
-  - ipython=7.16.1=py38h23f93f0_0
+  - ipython=7.17.0=py38h1cdfbd6_0
   - ipython_genutils=0.2.0=py_1
   - ipywidgets=7.5.1=py_0
   - jedi=0.17.2=py38h32f6830_0
@@ -38,29 +42,28 @@ dependencies:
   - jsonschema=3.2.0=py38h32f6830_1
   - jupyter_client=6.1.6=py_0
   - jupyter_core=4.6.3=py38h32f6830_1
-  - jupyterlab=2.2.0=py_0
+  - jupyterlab=2.2.4=py_0
   - jupyterlab-git=0.20.0=py_1
   - jupyterlab_server=1.2.0=py_0
   - kiwisolver=1.2.0=py38hbf85e49_0
   - lcms2=2.11=hbd6801e_0
-  - ld_impl_linux-64=2.34=hc38a660_8
+  - ld_impl_linux-64=2.34=hc38a660_9
   - libblas=3.8.0=17_openblas
   - libcblas=3.8.0=17_openblas
   - libffi=3.2.1=he1b5a44_1007
-  - libgcc-ng=9.2.0=h24d8f2e_2
-  - libgfortran-ng=7.5.0=hdf63c60_10
-  - libgomp=9.2.0=h24d8f2e_2
+  - libgcc-ng=9.3.0=h24d8f2e_14
+  - libgfortran-ng=7.5.0=hdf63c60_14
+  - libgomp=9.3.0=h24d8f2e_14
   - liblapack=3.8.0=17_openblas
   - libopenblas=0.3.10=pthreads_hb3c22a3_4
   - libpng=1.6.37=hed695b0_1
-  - libsodium=1.0.17=h516909a_0
-  - libstdcxx-ng=9.2.0=hdf63c60_2
+  - libsodium=1.0.18=h516909a_0
+  - libstdcxx-ng=9.3.0=hdf63c60_14
   - libtiff=4.1.0=hc7e4089_6
   - libuv=1.38.0=h516909a_0
   - libwebp-base=1.1.0=h516909a_3
   - libxgboost=1.1.1=he1b5a44_0
   - lightgbm=2.3.1=py38he1b5a44_0
-  - llvm-openmp=10.0.1=hc9558a2_0
   - lz4-c=1.9.2=he1b5a44_1
   - markupsafe=1.1.1=py38h1e0a361_1
   - matplotlib-base=3.3.0=py38h91b0d89_1
@@ -70,13 +73,13 @@ dependencies:
   - nbformat=5.0.7=py_0
   - ncurses=6.2=he1b5a44_1
   - networkx=2.4=py_1
-  - nodejs=14.6.0=h568c755_0
-  - notebook=6.0.3=py38h32f6830_1
+  - nodejs=14.7.0=h568c755_0
+  - notebook=6.1.1=py38h32f6830_0
   - numpy=1.19.1=py38h8854b6b_0
   - olefile=0.46=py_0
-  - openssl=1.1.1g=h516909a_0
+  - openssl=1.1.1g=h516909a_1
   - packaging=20.4=pyh9f0ad1d_0
-  - pandas=1.0.5=py38hcb8c335_0
+  - pandas=1.1.0=py38h950e882_0
   - pandoc=2.10.1=h516909a_0
   - pandocfilters=1.4.2=py_1
   - parso=0.7.1=pyh9f0ad1d_0
@@ -84,10 +87,10 @@ dependencies:
   - pexpect=4.8.0=py38h32f6830_1
   - pickleshare=0.7.5=py38h32f6830_1001
   - pillow=7.2.0=py38h9776b28_1
-  - pip=20.1.1=py_1
+  - pip=20.2.1=py_0
   - plotly=4.9.0=pyh9f0ad1d_0
   - prometheus_client=0.8.0=pyh9f0ad1d_0
-  - prompt-toolkit=3.0.5=py_1
+  - prompt-toolkit=3.0.6=py_0
   - ptyprocess=0.6.0=py_1001
   - py-xgboost=1.1.1=py38h32f6830_0
   - pycparser=2.20=pyh9f0ad1d_2
@@ -96,20 +99,20 @@ dependencies:
   - pyparsing=2.4.7=pyh9f0ad1d_0
   - pyrsistent=0.16.0=py38h1e0a361_0
   - pysocks=1.7.1=py38h32f6830_1
-  - python=3.8.5=h425cb1d_1_cpython
+  - python=3.8.5=h4d41432_2_cpython
   - python-dateutil=2.8.1=py_0
   - python_abi=3.8=1_cp38
   - pytz=2020.1=pyh9f0ad1d_0
-  - pyzmq=19.0.1=py38ha71036d_0
+  - pyzmq=19.0.2=py38ha71036d_0
   - readline=8.0=he28a2e2_2
   - requests=2.24.0=pyh9f0ad1d_0
   - retrying=1.3.3=py_2
-  - scikit-learn=0.23.1=py38h3a94b23_0
+  - scikit-learn=0.23.2=py38hee58b96_0
   - scipy=1.5.2=py38h8c5af15_0
   - seaborn=0.10.1=1
   - seaborn-base=0.10.1=py_1
   - send2trash=1.5.0=py_0
-  - setuptools=49.2.0=py38h32f6830_0
+  - setuptools=49.3.1=py38h32f6830_0
   - six=1.15.0=pyh9f0ad1d_0
   - smmap=3.0.4=pyh9f0ad1d_0
   - sqlite=3.32.3=hcee41ef_1
@@ -119,18 +122,19 @@ dependencies:
   - threadpoolctl=2.1.0=pyh5ca1d4c_0
   - tk=8.6.10=hed695b0_0
   - tornado=6.0.4=py38h1e0a361_1
-  - tqdm=4.48.0=pyh9f0ad1d_0
+  - tqdm=4.48.2=pyh9f0ad1d_0
   - traitlets=4.3.3=py38h32f6830_1
+  - unzip=6.0=h516909a_1
   - urllib3=1.25.10=py_0
-  - wcwidth=0.2.5=pyh9f0ad1d_0
+  - wcwidth=0.2.5=pyh9f0ad1d_1
   - webencodings=0.5.1=py_1
   - wheel=0.34.2=py_1
   - widgetsnbextension=3.5.1=py38h32f6830_1
   - xgboost=1.1.1=py38h950e882_0
   - xz=5.2.5=h516909a_1
-  - zeromq=4.3.2=he1b5a44_2
+  - zeromq=4.3.2=he1b5a44_3
   - zipp=3.1.0=py_0
-  - zlib=1.2.11=h516909a_1006
+  - zlib=1.2.11=h516909a_1007
   - zstd=1.4.5=h6597ccf_2
 prefix: /local/bruingjde/.conda/envs/networkdatascience
 
