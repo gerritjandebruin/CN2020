@@ -59,7 +59,7 @@ class ProgressParallel(joblib.Parallel):
         self._pbar.refresh()
 
         
-def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[int, int]], target: typing.List[bool], hplp=True, chunksize=1000) -> pd.DataFrame:
+def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[int, int]], target: typing.List[bool], hplp=True, chunksize=1000, n_jobs=256) -> pd.DataFrame:
   features = dict()
   
   # Single-core calculations:
@@ -98,9 +98,11 @@ def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[in
   
   ## Preferential Attachment
   if not hplp: features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
+    
+  joblib.dump(features, args.directory + 'singlecore.pkl', protocol=5)
   
   # Multi-core calculations:
-  no_chunks = len(nodepairs) // chunk_size
+  no_chunks = len(nodepairs) // chunksize
   nodepair_chuncks = np.array_split(nodepairs, no_chunks)
   
   ## Maxflow
@@ -109,7 +111,7 @@ def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[in
   kwargs = {'flow_func': nx.algorithms.flow.preflow_push} if args.preflow else {'flow_func': nx.algorithms.flow.edmonds_karp, 'cutoff': 5}
 
   mf = np.array(
-    flatten(ProgressParallel(n_jobs=128, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
+    flatten(ProgressParallel(n_jobs=n_jobs, total=no_chunks, desc='Maxflow (parallel)')(joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
   )
   print_status("Store maxflow.")
   mf = np.array(mf)
@@ -118,7 +120,7 @@ def feature_construction(graph: nx.Graph, nodepairs: typing.List[typing.Tuple[in
   
   # Katz
   if not hplp:
-    katz = np.array(flatten(ProgressParallel(n_jobs=-1, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
+    katz = np.array(flatten(ProgressParallel(n_jobs=n_jobs, total=no_chunks, desc='Katz (parallel)')(joblib.delayed(get_katz)(graph, nodepair_chunck) for nodepair_chunck in nodepair_chuncks)))
     print_status("Store Katz.")
     katz.dump(args.directory + 'katz.pkl')
     features['katz'] = katz
@@ -150,6 +152,6 @@ if __name__ == "__main__":
   
   # Store
   print_status("Store features.") 
-  features.to_pickle(args.directory + 'features.pkl')
+  features.to_pickle(args.directory + 'features.pkl', protocol=5)
 
   

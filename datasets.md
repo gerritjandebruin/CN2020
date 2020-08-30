@@ -1,4 +1,0 @@
-- condmat
-- artexhibit (too small GC)
-- delis (strange format)
-- routeviews (no temporal edge info)
