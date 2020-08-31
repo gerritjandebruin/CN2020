@@ -1,44 +1,47 @@
 Stack Overflow network, part of the Koblenz Network Collection
 ===========================================================================
 
-This directory contains the TSV and related files of the stackexchange-stackoverflow network: This is the bipartite Stack Overflow favorite network. Stack Overflow is the main question and answer website of the Stack Exchange Network. The nodes represent users and posts. An undirected, unweighted edge denotes that a user has marked a post as a favorite.
+This directory contains the TSV and related files of the sx-stackoverflow network: These are interactions from the StackExchange site "Stack Overflow".  The network is between users, and directed edges represent three types of interactions:  answering a question of another user, commenting on another user's question, and commenting on another user's answer.  The network is temporal.  This network is part of a series of network from multiple StackExchange sites.
 
 
 More information about the network is provided here: 
-http://konect.cc/networks/stackexchange-stackoverflow
+http://konect.cc/networks/sx-stackoverflow
 
 Files: 
-    meta.stackexchange-stackoverflow -- Metadata about the network 
-    out.stackexchange-stackoverflow -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
-      The meaning of the columns in out.stackexchange-stackoverflow are: 
+    meta.sx-stackoverflow -- Metadata about the network 
+    out.sx-stackoverflow -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
+      The meaning of the columns in out.sx-stackoverflow are: 
         First column: ID of from node 
         Second column: ID of to node
         Third column (if present): weight or multiplicity of edge
         Fourth column (if present):  timestamp of edges Unix time
+        Third column: edge weight
         Fourth column: timestamp of the edge
 
 
 Use the following References for citation:
 
-@MISC{konect:2017:stackexchange-stackoverflow,
+@MISC{konect:2017:sx-stackoverflow,
     title = {Stack Overflow network dataset -- {KONECT}},
-    month = oct,
+    month = nov,
     year = {2017},
-    url = {http://konect.cc/networks/stackexchange-stackoverflow}
+    url = {http://konect.cc/networks/sx-stackoverflow}
 }
 
-@misc{konect:stackexchange,
-	title = {Stack Exchange Data Explorer},
-	author = {{Stack Exchange Inc.}},
-	year = {2011},
-	howpublished = {\url{http://data.stackexchange.com/}},
+@misc{snap.stanford.edu,
+      title = {{Stanford} {Network} {Analysis} {Project}},
+      author = {Jure Leskovec},
+      month = {September},
+      year = {2014},
+      howpublished = {\url{http://snap.stanford.edu/}},
 }
 
-@misc{konect:stackexchange,
-	title = {Stack Exchange Data Explorer},
-	author = {{Stack Exchange Inc.}},
-	year = {2011},
-	howpublished = {\url{http://data.stackexchange.com/}},
+@misc{snap.stanford.edu,
+      title = {{Stanford} {Network} {Analysis} {Project}},
+      author = {Jure Leskovec},
+      month = {September},
+      year = {2014},
+      howpublished = {\url{http://snap.stanford.edu/}},
 }
 
 
