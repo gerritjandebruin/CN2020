@@ -1,11 +1,7 @@
-archive/
-temp/
 .vscode
 __pycache__
 .ipynb_checkpoints
-temp
 *.pkl
 *.zip*
-*out.*
-*.name
 *.hg2
+*.edges
