@@ -1,0 +1,1 @@
+rsync -aPhi --delete /home/bruingjde/complexnetworks2020-experiment/ nieuw-engeland.nl:/volume1/backup1/liacs/complexnetworks2020-experiment/
