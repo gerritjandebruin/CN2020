@@ -113,7 +113,7 @@ def feature_construction(path: str, *, preflow=False, chunksize=1000, n_jobs=256
     # Propflow
     print_status('pf', position)
     score = get_propflow(graph)
-    if type(graph) is nx.DiGraph: features['pf'] = np.from_iter((score.get(u, 0).get(v, 0) for u, v in nodepairs), dtype=float)
+    if type(graph) is nx.DiGraph: features['pf'] = np.fromiter((score.get(u, 0).get(v, 0) for u, v in nodepairs), dtype=float)
     else:  features['pf'] = np.fromiter(((score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in nodepairs), dtype=float)
     
     # Shortest Paths
