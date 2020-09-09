@@ -19,7 +19,7 @@ def read_edges(file: str, sep=' ', skiprows=1) -> pd.DataFrame:
   return d.loc[:, ['source', 'target', 'date']]
 
 
-def filter_edgelist(edges: pd.DataFrame, start=0, stop=1, verbose=True) -> pd.DataFrame: 
+def filter_edges(edges: pd.DataFrame, start=0, stop=1, verbose=True) -> pd.DataFrame: 
   """Filter edgelist.  If start/ stop is float, start/stop from the fraction of total edges. If datetime, this is used.""" 
   no_edges = len(edges)
   if start != 0:
@@ -50,9 +50,9 @@ def filter_edgelist(edges: pd.DataFrame, start=0, stop=1, verbose=True) -> pd.Da
 def convert_to_set(edges: pd.DataFrame) -> List[NodePair]: return {edge for edge in edges.loc[:, ['source', 'target']].itertuples(index=False, name=None)}
 
 
-def get_graph(edgelist: pd.DataFrame) -> nx.Graph:
+def get_graph(edgelist: pd.DataFrame, directed: bool) -> nx.Graph:
   """Add edge to graph. Contains edge attribute weight."""
-  g = nx.Graph()
+  g = nx.DiGraph() if directed else nx.Graph()
   
   for u, v, _ in edgelist.itertuples(index=False, name=None):
     weight = g[u][v]["weight"]+1 if g.has_edge(u,v) else 1
@@ -61,7 +61,8 @@ def get_graph(edgelist: pd.DataFrame) -> nx.Graph:
   return g
 
 
-def giant_component(graph: nx.Graph) -> nx.Graph: return graph.subgraph(max(nx.connected_components(graph), key=len)).copy()
+def giant_component(graph): 
+  return graph.subgraph(max(nx.strongly_connected_components(graph), key=len)).copy() if type(graph) is nx.DiGraph else graph.subgraph(max(nx.connected_components(graph), key=len)).copy()
 
 
 def report(graph:nx.Graph, probes: Tuple[int, int]):
