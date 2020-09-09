@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from linkprediction import construct_edges, convert_to_set, get_distances, read_edges, filter_edges, get_graph, giant_component
+
 def flatten(l): return [item for sublist in l for item in sublist]
 def get_mf(graph, nodepairs, residual, flow_func, **kwargs): 
   if type(graph) is nx.DiGraph:
@@ -163,6 +165,44 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
 
   print_status('store', position)
   pd.DataFrame(features).to_pickle(path + 'features.pkl', protocol=5)
+  
+def random(edges: list, *, directed: bool, t_a=50000, t_b=70000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('random')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  print(graph.number_of_nodes())
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def train(edges: list, *, directed: bool, t_a=50000, t_b=60000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('train')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def test(edges: list, *, directed: bool, t_a=60000, t_b=70000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('test')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def store(edges, filepath, *, directed: bool, verbose=False, **kwargs):
+  if verbose: print_status(filepath)
+  for path in ['random/', 'train/', 'test/']: os.makedirs(filepath + path, exist_ok=True)
+  for name, obj in random(edges, directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}random/{name}.pkl', protocol=5)
+  for name, obj in train(edges, directed=directed, verbose=verbose, position=position, **kwargs).items(): joblib.dump(obj, f'{filepath}train/{name}.pkl', protocol=5)
+  for name, obj in test(edges, directed=directed, verbose=verbose, position=position, **kwargs).items(): joblib.dump(obj, f'{filepath}test/{name}.pkl', protocol=5)
 
 if __name__ == "__main__":
   # Get parameters

@@ -42,7 +42,7 @@ def read_edges(file: str, sep=' ', skiprows=1) -> pd.DataFrame:
   return d.loc[:, ['source', 'target', 'date']]
 
 
-def filter_edges(edges: pd.DataFrame, start=0, stop=1, verbose=True) -> pd.DataFrame: 
+def filter_edges(edges: pd.DataFrame, start=0, stop=1, verbose=False) -> pd.DataFrame: 
   """Filter edgelist.  If start/ stop is float, start/stop from the fraction of total edges. If datetime, this is used.""" 
   no_edges = len(edges)
   if start != 0:
@@ -100,7 +100,7 @@ def report(graph:nx.Graph, probes: Tuple[int, int]):
   print(f"- not in graph: {ng} ({ng/n:.0%})")
   
   
-def get_distances(graph: nx.Graph, cutoff: int = None) -> (List[NodePair], List[int]):
+def get_distances(graph: nx.Graph, cutoff: int = None, **kwargs) -> (List[NodePair], List[int]):
   """
   Get all non-edges using BFS. When cutoff provided, consider only node pairs with at most this distance.
   Returns:
@@ -110,7 +110,7 @@ def get_distances(graph: nx.Graph, cutoff: int = None) -> (List[NodePair], List[
   return zip(
     *[
       ((u, v), distance)
-      for u, (nbs_u, _) in tqdm(nx.all_pairs_dijkstra(graph, cutoff, weight=None), total=len(graph), desc="get_distances")
+      for u, (nbs_u, _) in tqdm(nx.all_pairs_dijkstra(graph, cutoff, weight=None), total=len(graph), desc="get_distances", **kwargs)
       for v, distance in nbs_u.items() if distance > 1 and (cutoff is None or distance <= cutoff) 
     ]
   )

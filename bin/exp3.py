@@ -6,47 +6,9 @@ from time import localtime, strftime
 import joblib
 
 from linkprediction import construct_edges, convert_to_set, get_distances, read_edges, filter_edges, get_graph, giant_component
-from feature_construction import feature_construction
+from feature_construction import feature_construction, store
 
 def print_status(*args): print(strftime("%H:%M:%S", localtime()), *args)
-
-def random(edges: list, *, directed: bool, t_a=50000, t_b=70000, cutoff=2):
-  print('random')
-  edges_mature = filter_edges(edges, stop=t_a)
-  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
-  graph = giant_component(get_graph(edges_mature, directed=directed))
-  print(graph.number_of_nodes())
-  uv_probes = convert_to_set(edges_probe)
-  nodepairs, _ = get_distances(graph, cutoff=cutoff)
-  targets = [nodepair in uv_probes for nodepair in nodepairs]
-  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
-
-def train(edges: list, *, directed: bool, t_a=50000, t_b=60000, cutoff=2):
-  print('train')
-  edges_mature = filter_edges(edges, stop=t_a)
-  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
-  graph = giant_component(get_graph(edges_mature, directed=directed))
-  uv_probes = convert_to_set(edges_probe)
-  nodepairs, _ = get_distances(graph, cutoff=cutoff)
-  targets = [nodepair in uv_probes for nodepair in nodepairs]
-  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
-
-def test(edges: list, *, directed: bool, t_a=60000, t_b=70000, cutoff=2):
-  print('test')
-  edges_mature = filter_edges(edges, stop=t_a)
-  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
-  graph = giant_component(get_graph(edges_mature, directed=directed))
-  uv_probes = convert_to_set(edges_probe)
-  nodepairs, _ = get_distances(graph, cutoff=cutoff)
-  targets = [nodepair in uv_probes for nodepair in nodepairs]
-  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
-
-def store(edges, filepath, *, directed: bool):
-  print(filepath)
-  for path in ['random/', 'train/', 'test/']: os.makedirs(filepath + path, exist_ok=True)
-  for name, obj in random(edges, directed=directed).items(): joblib.dump(obj, f'{filepath}random/{name}.pkl', protocol=5)
-  for name, obj in train(edges, directed=directed).items(): joblib.dump(obj, f'{filepath}train/{name}.pkl', protocol=5)
-  for name, obj in test(edges, directed=directed).items(): joblib.dump(obj, f'{filepath}test/{name}.pkl', protocol=5)
 
 # # AU
 # store(edges = read_edges('data/au.edges', sep='\t'), filepath = 'exp3/au/', directed=True)
