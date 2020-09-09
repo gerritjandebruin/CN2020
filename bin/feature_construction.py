@@ -49,7 +49,7 @@ def get_propflow(graph, limit=5):
                     if n3 not in found: newSearch.add(n3)
         score[node] = scores
     return score  
-def print_status(desc: str, index: int): print(f'{strftime("%H:%M:%S", localtime())} {index} {desc}')
+def print_status(desc: str, index: int): print(f'{strftime("%H:%M:%S", localtime())} {desc}') if index is None else print(f'{strftime("%H:%M:%S", localtime())} {index} {desc}')
 class ProgressParallel(joblib.Parallel):
     def __init__(self, use_tqdm=True, total=None, desc=None, *args, **kwargs):
         self._use_tqdm = use_tqdm
@@ -68,7 +68,7 @@ class ProgressParallel(joblib.Parallel):
         self._pbar.refresh()
 
         
-def feature_construction(path: str, *, preflow=False, chunksize=1000, n_jobs=256, position=0, use_tqdm=False, only_singlecore=False) -> pd.DataFrame:
+def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256, position=None, use_tqdm=False, only_singlecore=False) -> pd.DataFrame:
   print_status('Start loading', position)
   graph     = joblib.load(path + 'graph.pkl')
   nodepairs = joblib.load(path + 'nodepairs.pkl')
@@ -150,11 +150,9 @@ def feature_construction(path: str, *, preflow=False, chunksize=1000, n_jobs=256
 
   kwargs = dict(flow_func=nx.algorithms.flow.preflow_push) if preflow else dict(flow_func=nx.algorithms.flow.edmonds_karp, cutoff=5)
 
-  mf = np.array(flatten(ProgressParallel(n_jobs=n_jobs, desc='mf', total=len(nodepair_chuncks), use_tqdm=use_tqdm)(
+  features['mf'] = np.array(flatten(ProgressParallel(n_jobs=n_jobs, desc='mf', total=len(nodepair_chuncks), use_tqdm=use_tqdm)(
     joblib.delayed(get_mf)(graph, nodepair_chunck, residual, **kwargs) for nodepair_chunck in nodepair_chuncks))
   )
-  mf.dump(path + 'maxflow.pkl')
-  features['mf'] = mf
 
 #   # Katz
 #   if not hplp:
