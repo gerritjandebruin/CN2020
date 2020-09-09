@@ -197,12 +197,15 @@ def test(edges: list, *, directed: bool, t_a=60000, t_b=70000, cutoff=2, verbose
   targets = [nodepair in uv_probes for nodepair in nodepairs]
   return dict(nodepairs=nodepairs, graph=graph, targets=targets)
 
-def store(edges, filepath, *, directed: bool, verbose=False, **kwargs):
+def store(edges, filepath, *, directed: bool, verbose=False, only_do=None, **kwargs):
   if verbose: print_status(filepath)
   for path in ['random/', 'train/', 'test/']: os.makedirs(filepath + path, exist_ok=True)
-  for name, obj in random(edges, directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}random/{name}.pkl', protocol=5)
-  for name, obj in train(edges, directed=directed, verbose=verbose, position=position, **kwargs).items(): joblib.dump(obj, f'{filepath}train/{name}.pkl', protocol=5)
-  for name, obj in test(edges, directed=directed, verbose=verbose, position=position, **kwargs).items(): joblib.dump(obj, f'{filepath}test/{name}.pkl', protocol=5)
+  if only_do is None or only_do=='random': 
+    for name, obj in random(edges, directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}random/{name}.pkl', protocol=5)
+  if only_do is None or only_do=='train':  
+    for name, obj in train(edges,  directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}train/{name}.pkl',  protocol=5)
+  if only_do is None or only_do=='test':   
+    for name, obj in test(edges,   directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}test/{name}.pkl',   protocol=5)
 
 if __name__ == "__main__":
   # Get parameters
