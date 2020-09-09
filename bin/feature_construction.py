@@ -4,7 +4,7 @@ import argparse
 import collections
 import math
 import os
-from time import localtime, strftime
+from time import localtime, strftime, time
 
 import joblib
 import networkx as nx
@@ -68,20 +68,22 @@ class ProgressParallel(joblib.Parallel):
         self._pbar.refresh()
 
         
-def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256, position=None, use_tqdm=False, only_singlecore=False) -> pd.DataFrame:
-  print_status('Start loading', position)
+def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256, position=None, use_tqdm=False, only_singlecore=False, verbose=False) -> pd.DataFrame:
+  if verbose: print_status('Start loading', position)
   graph     = joblib.load(path + 'graph.pkl')
   nodepairs = joblib.load(path + 'nodepairs.pkl')
   target    = joblib.load(path + 'targets.pkl')
   
   if os.path.isfile(path + 'singlecore.pkl'): 
-    print_status('Load singlecore.pkl', position)
+    if verbose: print_status('Load singlecore.pkl', position)
     features = joblib.load(path + 'singlecore.pkl')
   else:
     features = dict()
 
     # Degree
-    print_status('degree', position)
+    if verbose: 
+      print_status('start degree', position)
+      start = time()
     if type(graph) is nx.DiGraph:
       features['d_out_u'] = [graph.out_degree(u) for u, _ in nodepairs]
       features['d_out_v'] = [graph.out_degree(v) for _, v in nodepairs]
@@ -92,9 +94,12 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
       degree.sort(axis=1)
       features['d_min'] = degree[:,0]
       features['d_max'] = degree[:,1]
+    if verbose: print_status(f'stop degree after {time()-start} s', position)
     
     # Volume
-    print_status('volume', position)
+    if verbose: 
+      print_status('start volume', position)
+      start = time()
     if type(graph) is nx.DiGraph:
       features['v_out_u'] = [graph.out_degree(u, weight='weight') for u, _ in nodepairs]
       features['v_out_v'] = [graph.out_degree(v, weight='weight') for _, v in nodepairs]
@@ -105,23 +110,32 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
       volume.sort(axis=1)
       features['v_min'] = volume[:,0]
       features['v_max'] = volume[:,1]
+    print_status(f'stop volume after {time()-start} s', position)
     
     # Common Neighbors
-    print_status('cn', position)
+    if verbose: 
+      print_status('start cn', position)
+      start = time()
     features['cn'] = [len(set(graph.neighbors(u)) & set(graph.neighbors(v))) for u, v in nodepairs] if type(graph) is nx.DiGraph else [len(list(nx.common_neighbors(graph, *np))) for np in nodepairs]
+    if verbose: print_status(f'stop cn after {time()-start} s', position)
     
     # Propflow
-    print_status('pf', position)
+    if verbose: 
+      print_status('start pf', position)
+      start = time()
     score = get_propflow(graph)
     if type(graph) is nx.DiGraph: features['pf'] = np.fromiter((score.get(u, 0).get(v, 0) for u, v in nodepairs), dtype=float)
     else:  features['pf'] = np.fromiter(((score.get(u, 0).get(v, 0) + score.get(v, 0).get(u, 0))/2 for u, v in nodepairs), dtype=float)
+    if verbose: print_status(f'stop pf after {time()-start} s', position)  
     
     # Shortest Paths
-    print_status('sp', position)
+    if verbose: 
+      print_status('start sp', position)
+      start = time()
     sp_dict = {node: {k: len(v) for k, v in nx.predecessor(graph, node, cutoff=5).items()} for node in graph}
     
-    sp = np.fromiter((sp_dict[u][v] for u, v in nodepairs), dtype=int)
-    features['sp'] = sp
+    features['sp'] = np.fromiter((sp_dict[u][v] for u, v in nodepairs), dtype=int)
+    if verbose: print_status(f'stop pf after {time()-start} s', position)
     
   #   # Adamic Adar
   #   features['aa'] = [sum([s for _, _, s in nx.adamic_adar_index(graph, [nodepair, tuple(reversed(nodepair))])]) / 2 for nodepair in tqdm(nodepairs, desc='Adamic Adar')]
@@ -133,9 +147,13 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
   #   features['pa'] = [p for _, _, p in nx.preferential_attachment(graph, tqdm(nodepairs, desc='Preferential Attachment'))]
     
     # Target
+    if verbose: 
+      print_status('start target', position)
+      start = time()
     features['target'] = target
+    if verbose: print_status(f'stop target after {time()-start} s', position)
     
-    print_status('store singlecore.pkl', position)
+    if verbose: print_status('store singlecore.pkl', position)
     joblib.dump(features, path + 'singlecore.pkl', protocol=5)
     
   if only_singlecore: return
@@ -145,7 +163,7 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
   nodepair_chuncks = np.array_split(nodepairs, no_chunks)
 
   ## Maxflow
-  print_status('mf', position)
+  if verbose: print_status('mf', position)
   residual = nx.algorithms.flow.utils.build_residual_network(graph, 'weight')
 
   kwargs = dict(flow_func=nx.algorithms.flow.preflow_push) if preflow else dict(flow_func=nx.algorithms.flow.edmonds_karp, cutoff=5)
@@ -161,7 +179,7 @@ def feature_construction(path: str, *, preflow=False, chunksize=500, n_jobs=256,
 #     katz.dump(path + 'katz.pkl')
 #     features['katz'] = katz
 
-  print_status('store', position)
+  if verbose: print_status('store', position)
   pd.DataFrame(features).to_pickle(path + 'features.pkl', protocol=5)
 
 if __name__ == "__main__":
