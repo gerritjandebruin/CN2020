@@ -114,3 +114,44 @@ def get_distances(graph: nx.Graph, cutoff: int = None, **kwargs) -> (List[NodePa
       for v, distance in nbs_u.items() if distance > 1 and (cutoff is None or distance <= cutoff) 
     ]
   )
+
+def random(edges: list, *, directed: bool, t_a=50000, t_b=70000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('random')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  print(graph.number_of_nodes())
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def train(edges: list, *, directed: bool, t_a=50000, t_b=60000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('train')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def test(edges: list, *, directed: bool, t_a=60000, t_b=70000, cutoff=2, verbose=False, **kwargs):
+  if verbose: print_status('test')
+  edges_mature = filter_edges(edges, stop=t_a)
+  edges_probe = filter_edges(edges, start=t_a, stop=t_b)
+  graph = giant_component(get_graph(edges_mature, directed=directed))
+  uv_probes = convert_to_set(edges_probe)
+  nodepairs, _ = get_distances(graph, cutoff=cutoff, **kwargs)
+  targets = [nodepair in uv_probes for nodepair in nodepairs]
+  return dict(nodepairs=nodepairs, graph=graph, targets=targets)
+
+def store(edges, filepath, *, directed: bool, verbose=False, only_do=None, **kwargs):
+  if verbose: print_status(filepath)
+  for path in ['random/', 'train/', 'test/']: os.makedirs(filepath + path, exist_ok=True)
+  if only_do is None or only_do=='random': 
+    for name, obj in random(edges, directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}random/{name}.pkl', protocol=5)
+  if only_do is None or only_do=='train':  
+    for name, obj in train(edges,  directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}train/{name}.pkl',  protocol=5)
+  if only_do is None or only_do=='test':   
+    for name, obj in test(edges,   directed=directed, verbose=verbose, **kwargs).items(): joblib.dump(obj, f'{filepath}test/{name}.pkl',   protocol=5)
