@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+from itertools import combinations
 import math
 from typing import Dict, List, Tuple
 
@@ -11,6 +12,28 @@ from tqdm import tqdm
 # Typing
 NodePair = Tuple[int, int]
 Edge = List[Tuple[int, int, Dict['date', datetime.datetime]]]
+
+def construct_edges(file: str): 
+  def get_papers(file: str):
+    papers = list()
+    # Get number of rows to read for the vertices.
+    with open(file) as f: no_rows = int(f.readline().split(' ')[1])
+
+    with open(file) as f:
+      for paper in f.readlines()[no_rows+2:]:
+        # Each line has the following format: epoch no_authors [ u v (w ...) ]
+        epoch = datetime.datetime.fromtimestamp(int(paper.split(' ')[0]))
+
+        no_authors = int(paper.split(' ')[1])
+        index1 = paper.find('[')+2
+        index2 = paper.find(']')-1
+
+        authors = [int(auth) for auth in paper[index1:index2].split(' ')]
+        assert no_authors == len(authors)
+
+        papers.append((authors, epoch))
+    return papers 
+  return pd.DataFrame([(u, v, date) if u<v else (v, u, date) for authors, date in get_papers(file) for u, v in combinations(authors, 2)], columns=['source', 'target', 'date'])
 
 def read_edges(file: str, sep=' ', skiprows=1) -> pd.DataFrame:
   d = pd.read_csv(file, sep, skiprows=skiprows, names=['source', 'target', 'weight', 'date'])
