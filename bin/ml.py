@@ -54,11 +54,12 @@ def gridsearch(df: pd.DataFrame, random_state=1, also_random=True, max_depth=[1,
   if also_random: df['test_over_random'] = df['mean_test'] - df['mean_test_random']
   return df.sort_values('mean_test', ascending=False)
     
-def report_performance(df: pd.DataFrame, random_state=1, max_depth=1, tree_method='hist', balanced=True, n_jobs=128):
-  X = df.drop(columns='target').values
-  y = df['target'].values
-  X_trainval, X_test, y_trainval, y_test = train_test_split(X, y, test_size=1/3, random_state=random_state)
+def get_x_y(df: pd.DataFrame): return df.drop(columns='target').values, df['target'].values
+def report_performance(df_train: pd.DataFrame, df_test=None, random_state=1, max_depth=1, tree_method='hist', balanced=True, n_jobs=256):
+  X, y = get_x_y(df_train)
+  if df_test is None: X, X_test, y, y_test = train_test_split(X, y, test_size=1/3, random_state=random_state)
+  else: X_test, y_test = get_x_y(df_test)
   clf = XGBClassifier(max_depth=max_depth, n_jobs=128, tree_method=tree_method, scale_pos_weight=sum(~y)/sum(y) if balanced else 1 , random_state=random_state)
-  clf.fit(X_trainval, y_trainval)
+  clf.fit(X, y)
   y_pred = clf.predict_proba(X_test)[:,1]
-  return average_precision_score(y_test, y_pred), roc_auc_score(y_test, y_pred)
+  return dict(ap=average_precision_score(y_test, y_pred), roc=roc_auc_score(y_test, y_pred))
